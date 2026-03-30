@@ -4,56 +4,106 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Расписание поездов</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css">
+    <link rel="stylesheet" href="static\css\styles.css">
+    <script>
+        window.APP_CONFIG = {
+            apiBaseUrl: {{ api_base_url|tojson }}
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
+    <script type="module" src="static/js/main.js"></script>
 </head>
 <body>
     <main class="page">
-        <header class="page-header">
+        <header class="hero">
             <h1>🚂 Расписание поездов</h1>
-            <p class="page-subtitle">Поиск расписания по станции и между двумя станциями.</p>
         </header>
 
-        <section class="block">
-            <h2>1. Загрузить страны</h2>
-            <button id="loadCountriesBtn" type="button">Получить страны</button>
+        <div class="tabs" role="tablist" aria-label="Разделы приложения">
+            <button class="tab-button active" id="mainTabButton" type="button" data-tab="main" role="tab" aria-selected="true">Основная вкладка</button>
+            <button class="tab-button" id="mapTabButton" type="button" data-tab="map" role="tab" aria-selected="false">Поиск на карте</button>
+        </div>
 
-            <label for="country">Страна</label>
-            <input id="country" list="countryOptions" placeholder="Начни вводить название страны">
-            <datalist id="countryOptions"></datalist>
+        <section id="mainTab" class="tab-panel active" role="tabpanel" aria-labelledby="mainTabButton">
+            <section class="block">
+                <h2>1. Страна и станции</h2>
+                <div class="field-grid">
+                    <div>
+                        <label for="countryInput">Страна</label>
+                        <input id="countryInput" list="countriesList" placeholder="Начни вводить страну">
+                        <datalist id="countriesList"></datalist>
+                        <p class="hint" id="countryHint">Загрузка стран...</p>
+                    </div>
+
+                    <div>
+                        <label for="station1Input">Станция 1</label>
+                        <input id="station1Input" list="stationsList" placeholder="Начни вводить станцию">
+                    </div>
+
+                    <div>
+                        <label for="station2Input">Станция 2</label>
+                        <input id="station2Input" list="stationsList" placeholder="Начни вводить станцию">
+                    </div>
+                </div>
+                <datalist id="stationsList"></datalist>
+                <div class="actions">
+                    <button id="reloadStationsButton" type="button">Обновить станции выбранной страны</button>
+                </div>
+            </section>
+
+            <section class="block">
+                <h2>2. Расписание по одной станции</h2>
+                <label for="singleDate">Дата</label>
+                <input type="date" id="singleDate">
+                <button id="singleScheduleButton" type="button">Получить расписание станции</button>
+                <div id="singleResult" class="result">Здесь будет результат...</div>
+            </section>
+
+            <section class="block">
+                <h2>3. Расписание между двумя станциями</h2>
+                <label for="betweenDate">Дата</label>
+                <input type="date" id="betweenDate">
+                <button id="betweenScheduleButton" type="button">Получить расписание между станциями</button>
+                <div id="betweenResult" class="result">Здесь будет результат...</div>
+            </section>
         </section>
 
-        <section class="block">
-            <h2>2. Загрузить станции выбранной страны</h2>
-            <button id="loadStationsBtn" type="button">Получить станции</button>
+        <section id="mapTab" class="tab-panel" role="tabpanel" aria-labelledby="mapTabButton" hidden>
+            <section class="block">
+                <h2>Поиск станции на карте</h2>
 
-            <label for="station1">Станция 1</label>
-            <input id="station1" list="station1Options" placeholder="Начни вводить станцию отправления">
-            <datalist id="station1Options"></datalist>
+                <div class="map-summary">
+                    <div><strong>Текущая страна:</strong> <span id="mapCountryPreview">—</span></div>
+                    <div><strong>Станций загружено:</strong> <span id="mapStationsCount">0</span></div>
+                </div>
 
-            <label for="station2">Станция 2</label>
-            <input id="station2" list="station2Options" placeholder="Начни вводить станцию прибытия">
-            <datalist id="station2Options"></datalist>
-        </section>
+                <div class="map-toolbar">
+                    <div class="map-targets" id="mapTargetGroup">
+                        <span class="map-targets-title">Куда подставлять станцию:</span>
+                        <label class="radio-chip">
+                            <input type="radio" name="mapTarget" value="station1" checked>
+                            <span>Станция 1</span>
+                        </label>
+                        <label class="radio-chip">
+                            <input type="radio" name="mapTarget" value="station2">
+                            <span>Станция 2</span>
+                        </label>
+                    </div>
+                    <div class="map-toolbar-actions">
+                        <button id="showStationsOnMapButton" type="button">Показать станции на карте</button>
+                        <button id="focusSelectedStationButton" type="button">Показать выбранную станцию</button>
+                    </div>
+                </div>
 
-        <section class="block">
-            <h2>3. Расписание по одной станции</h2>
-            <label for="singleDate">Дата</label>
-            <input type="date" id="singleDate">
+                <div id="mapStatus" class="hint">Открой вкладку карты и нажми «Показать станции на карте».</div>
+                <div id="stationsMap" class="stations-map" aria-label="Карта со станциями"></div>
 
-            <button id="loadSingleScheduleBtn" type="button">Получить расписание станции</button>
-            <div id="singleResult" class="result-container">Здесь будет результат...</div>
-        </section>
-
-        <section class="block">
-            <h2>4. Расписание между двумя станциями</h2>
-            <label for="betweenDate">Дата</label>
-            <input type="date" id="betweenDate">
-
-            <button id="loadBetweenScheduleBtn" type="button">Получить расписание между станциями</button>
-            <div id="betweenResult" class="result-container">Здесь будет результат...</div>
+                <div id="selectedMapStation" class="selected-map-station empty-message">
+                    Здесь будет информация о станции, выбранной на карте.
+                </div>
+            </section>
         </section>
     </main>
-
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
