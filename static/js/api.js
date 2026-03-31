@@ -1,12 +1,13 @@
-import { APP_CONFIG } from './config.js';
+import { API_BASE_URL } from './config.js';
 
 export class StationsApi {
-    constructor(basePath = APP_CONFIG.apiBaseUrl) {
-        this.basePath = basePath;
+    constructor(basePath = API_BASE_URL) {
+        this.basePath = basePath.replace(/\/$/, '');
     }
 
     async sendRequest(path, params = {}) {
         const url = new URL(`${this.basePath}${path}`);
+
         Object.entries(params).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== '') {
                 url.searchParams.set(key, value);
@@ -22,7 +23,7 @@ export class StationsApi {
         let data = {};
         try {
             data = await response.json();
-        } catch (error) {
+        } catch {
             throw new Error('Сервер вернул не JSON-ответ.');
         }
 

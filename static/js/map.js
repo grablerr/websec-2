@@ -1,6 +1,8 @@
-const DEFAULT_CENTER = [37.6173, 55.7558];
-const DEFAULT_ZOOM = 4;
-const DETAIL_ZOOM = 13;
+import { MAP_CONFIG } from './config.js';
+
+const DEFAULT_CENTER = MAP_CONFIG.defaultCenter;
+const DEFAULT_ZOOM = MAP_CONFIG.defaultZoom;
+const DETAIL_ZOOM = MAP_CONFIG.detailZoom;
 
 export function createStationsMap({
     target,
@@ -15,6 +17,12 @@ export function createStationsMap({
     });
 
     const vectorSource = new ol.source.Vector();
+    const state = {
+        stations: [],
+        featuresByCode: new Map(),
+        selectedCode: null,
+    };
+
     const vectorLayer = new ol.layer.Vector({
         source: vectorSource,
         style: featureStyle,
@@ -28,12 +36,6 @@ export function createStationsMap({
             zoom: DEFAULT_ZOOM,
         }),
     });
-
-    const state = {
-        stations: [],
-        featuresByCode: new Map(),
-        selectedCode: null,
-    };
 
     map.on('click', (event) => {
         const feature = map.forEachFeatureAtPixel(event.pixel, (candidate) => candidate);
@@ -80,6 +82,7 @@ export function createStationsMap({
                 geometry: new ol.geom.Point(point),
                 station,
             });
+
             feature.setId(station.code);
             vectorSource.addFeature(feature);
             state.featuresByCode.set(station.code, feature);
@@ -112,6 +115,7 @@ export function createStationsMap({
             zoom: Math.max(map.getView().getZoom() || DEFAULT_ZOOM, DETAIL_ZOOM),
             duration: 250,
         });
+
         return true;
     }
 
@@ -130,12 +134,6 @@ export function createStationsMap({
         return state.featuresByCode.has(stationCode);
     }
 
-    return {
-        setStations,
-        clearStations,
-        focusStation,
-        hasStation,
-    };
 
     function featureStyle(feature) {
         const station = feature.get('station');
@@ -154,6 +152,13 @@ export function createStationsMap({
             }),
         });
     }
+
+    return {
+        setStations,
+        clearStations,
+        focusStation,
+        hasStation,
+    };
 }
 
 function renderSelectedStation(container, station) {
